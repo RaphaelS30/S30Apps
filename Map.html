@@ -24,15 +24,11 @@
     const urlParams = new URLSearchParams(window.location.search);
     const pointsParam = urlParams.get('points');
 
-    // Format attendu : 50.2,5.7|50.3,5.8|...
+    // Convertir la chaîne de caractères des points en un tableau d'objets
     const points = pointsParam ? pointsParam.split('|').map(p => {
-      const [lat, lon] = p.split(',').map(Number);
-      return { lat, lon };
-    }) : [
-      { lat: 50.279219, lon: 5.793382 },
-      { lat: 50.289000, lon: 5.803000 },
-      { lat: 50.299000, lon: 5.813000 }
-    ];
+      const [lat, lon, address] = p.split(',');
+      return { lat: parseFloat(lat), lon: parseFloat(lon), address: decodeURIComponent(address) };
+    }) : [];
 
     // Centrer la carte sur le premier point
     const map = L.map('map').setView([points[0].lat, points[0].lon], 13);
@@ -46,7 +42,10 @@
     points.forEach((point, i) => {
       L.marker([point.lat, point.lon])
         .addTo(map)
-        .bindPopup("Point " + (i + 1) + ": [" + point.lat + ", " + point.lon + "]");
+        .bindPopup(
+          "Point " + (i + 1) + ": [" + point.lat + ", " + point.lon + "]<br>" +
+          "Address: " + point.address
+        );
     });
   </script>
 </body>
