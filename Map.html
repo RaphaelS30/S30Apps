@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Carte Interactive OSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <style>
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    // Lire les points passés en paramètre d'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const pointsParam = urlParams.get('points');
+
+    // Format attendu : 50.2,5.7|50.3,5.8|...
+    const points = pointsParam ? pointsParam.split('|').map(p => {
+      const [lat, lon] = p.split(',').map(Number);
+      return { lat, lon };
+    }) : [
+      { lat: 50.279219, lon: 5.793382 },
+      { lat: 50.289000, lon: 5.803000 },
+      { lat: 50.299000, lon: 5.813000 }
+    ];
+
+    // Centrer la carte sur le premier point
+    const map = L.map('map').setView([points[0].lat, points[0].lon], 13);
+
+    // Ajouter fond de carte OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Ajouter les marqueurs
+    points.forEach((point, i) => {
+      L.marker([point.lat, point.lon])
+        .addTo(map)
+        .bindPopup("Point " + (i + 1) + ": [" + point.lat + ", " + point.lon + "]");
+    });
+  </script>
+</body>
+</html>
