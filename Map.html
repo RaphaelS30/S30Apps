@@ -2,12 +2,14 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Carte Interactive OSM</title>
+  <title>Carte Intervention ACN</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     html, body {
-      height: 100%; margin: 0; padding: 0;
+      height: 100%;
+      margin: 0;
+      padding: 0;
     }
     #map {
       width: 100%;
@@ -21,41 +23,46 @@
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-const pointsParam = urlParams.get('points');
+    const pointsParam = urlParams.get('points');
 
-// Convertir la chaîne de caractères des points en un tableau d'objets
-const points = pointsParam ? pointsParam.split('|').map(p => {
-  const parts = p.split(',');
-  return {
-    lat: parseFloat(parts[0]),
-    lon: parseFloat(parts[1]),
-    name: decodeURIComponent(parts[2] || ''),
-    address: decodeURIComponent(parts[3] || ''),
-    phone: decodeURIComponent(parts[4] || '')
-  };
-}) : [];
+    // Convertir les points passés dans l'URL en tableau d'objets
+    const points = pointsParam ? pointsParam.split('|').map(p => {
+      const parts = p.split(',');
+      return {
+        lat: parseFloat(parts[0]),
+        lon: parseFloat(parts[1]),
+        name: decodeURIComponent(parts[2] || ''),
+        address: decodeURIComponent(parts[3] || ''),
+        phone: decodeURIComponent(parts[4] || '')
+      };
+    }) : [];
 
-// Centrer la carte sur le premier point
-const map = L.map('map').setView([points[0].lat, points[0].lon], 13);
+    // Initialiser la carte
+    let map;
+    if (points.length > 0 && !isNaN(points[0].lat) && !isNaN(points[0].lon)) {
+      map = L.map('map').setView([points[0].lat, points[0].lon], 13);
+    } else {
+      // Centrer sur la Belgique par défaut
+      map = L.map('map').setView([50.5039, 4.4699], 7);
+    }
 
-// Ajouter fond de carte OpenStreetMap
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+    // Ajouter fond de carte OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-// Ajouter les marqueurs
-points.forEach((point, i) => {
-  const popupContent =
-    `<strong>Nom :</strong> ${point.name}<br>` +
-    `<strong>Adresse :</strong> ${point.address}<br>` +
-    `<strong>Téléphone :</strong> ${point.phone}<br>` +
-    `<em>Coordonnées :</em> [${point.lat}, ${point.lon}]`;
+    // Ajouter les marqueurs
+    points.forEach((point, i) => {
+      const popupContent =
+        `<strong>Nom :</strong> ${point.name}<br>` +
+        `<strong>Adresse :</strong> ${point.address}<br>` +
+        `<strong>Téléphone :</strong> ${point.phone}<br>` +
+        `<em>Coordonnées :</em> [${point.lat}, ${point.lon}]`;
 
-  L.marker([point.lat, point.lon])
-    .addTo(map)
-    .bindPopup(popupContent);
-});
-
+      L.marker([point.lat, point.lon])
+        .addTo(map)
+        .bindPopup(popupContent);
+    });
   </script>
 </body>
 </html>
