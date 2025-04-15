@@ -26,7 +26,7 @@
 
     // Convertir la chaîne de caractères des points en un tableau d'objets
     const points = pointsParam ? pointsParam.split('|').map(p => {
-      const [lat, lon, address] = p.split(',');
+      const [lat, lon, Nom, Adresse, Phone] = p.split(',');
       return { lat: parseFloat(lat), lon: parseFloat(lon), address: decodeURIComponent(address) };
     }) : [];
 
