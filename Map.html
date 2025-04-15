@@ -20,33 +20,42 @@
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
-    // Lire les points passés en paramètre d'URL
     const urlParams = new URLSearchParams(window.location.search);
-    const pointsParam = urlParams.get('points');
+const pointsParam = urlParams.get('points');
 
-    // Convertir la chaîne de caractères des points en un tableau d'objets
-    const points = pointsParam ? pointsParam.split('|').map(p => {
-      const [lat, lon, Nom, Adresse, Phone] = p.split(',');
-      return { lat: parseFloat(lat), lon: parseFloat(lon), address: decodeURIComponent(address) };
-    }) : [];
+// Convertir la chaîne de caractères des points en un tableau d'objets
+const points = pointsParam ? pointsParam.split('|').map(p => {
+  const parts = p.split(',');
+  return {
+    lat: parseFloat(parts[0]),
+    lon: parseFloat(parts[1]),
+    name: decodeURIComponent(parts[2] || ''),
+    address: decodeURIComponent(parts[3] || ''),
+    phone: decodeURIComponent(parts[4] || '')
+  };
+}) : [];
 
-    // Centrer la carte sur le premier point
-    const map = L.map('map').setView([points[0].lat, points[0].lon], 13);
+// Centrer la carte sur le premier point
+const map = L.map('map').setView([points[0].lat, points[0].lon], 13);
 
-    // Ajouter fond de carte OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+// Ajouter fond de carte OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-    // Ajouter les marqueurs
-    points.forEach((point, i) => {
-      L.marker([point.lat, point.lon])
-        .addTo(map)
-        .bindPopup(
-          "Point " + (i + 1) + ": [" + point.lat + ", " + point.lon + "]<br>" +
-          "Address: " + point.address
-        );
-    });
+// Ajouter les marqueurs
+points.forEach((point, i) => {
+  const popupContent =
+    `<strong>Nom :</strong> ${point.name}<br>` +
+    `<strong>Adresse :</strong> ${point.address}<br>` +
+    `<strong>Téléphone :</strong> ${point.phone}<br>` +
+    `<em>Coordonnées :</em> [${point.lat}, ${point.lon}]`;
+
+  L.marker([point.lat, point.lon])
+    .addTo(map)
+    .bindPopup(popupContent);
+});
+
   </script>
 </body>
 </html>
