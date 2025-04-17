@@ -41,7 +41,7 @@
 
       // Parser les données JSON
       const jsonData = JSON.parse(decodedContent);
-      
+
       // Ajouter des informations aux points avec les données du JSON
       points.forEach(point => {
         const jsonPoint = jsonData[point.id];
@@ -49,6 +49,8 @@
           point.name = decodeURIComponent(jsonPoint["Customer Name"]);
           point.address = decodeURIComponent(jsonPoint["Adresse"]);
           point.phone = decodeURIComponent(jsonPoint["Phone"]);
+        } else {
+          console.warn(`Aucune donnée trouvée pour le point avec ID: ${point.id}`);
         }
       });
 
