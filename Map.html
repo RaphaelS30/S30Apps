@@ -2,14 +2,12 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Carte Intervention ACN</title>
+  <title>Carte Interactive OSM</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+      height: 100%; margin: 0; padding: 0;
     }
     #map {
       width: 100%;
@@ -25,44 +23,59 @@
     const urlParams = new URLSearchParams(window.location.search);
     const pointsParam = urlParams.get('points');
 
-    // Convertir les points passés dans l'URL en tableau d'objets
+    // Convertir la chaîne de caractères des points en un tableau d'objets
     const points = pointsParam ? pointsParam.split('|').map(p => {
       const parts = p.split(',');
       return {
-        lat: parseFloat(parts[0]),
-        lon: parseFloat(parts[1]),
-        name: decodeURIComponent(parts[2] || ''),
-        address: decodeURIComponent(parts[3] || ''),
-        phone: decodeURIComponent(parts[4] || '')
+        id: parts[0], // ID du point
+        lat: parseFloat(parts[1]), // Latitude
+        lon: parseFloat(parts[2]), // Longitude
       };
     }) : [];
 
-    // Initialiser la carte
-    let map;
-    if (points.length > 0 && !isNaN(points[0].lat) && !isNaN(points[0].lon)) {
-      map = L.map('map').setView([points[0].lat, points[0].lon], 8);
-    } else {
-      // Centrer sur la Belgique par défaut
-      map = L.map('map').setView([50.5039, 4.4699], 8);
+    // Fonction pour récupérer les données depuis GitHub
+    async function fetchData() {
+      const response = await fetch('https://api.github.com/repos/raphaels30/S30Apps/contents/points_data.json');
+      const data = await response.json();
+      const decodedContent = atob(data.content); // Décoder le contenu base64
+
+      // Parser les données JSON
+      const jsonData = JSON.parse(decodedContent);
+      
+      // Ajouter des informations aux points avec les données du JSON
+      points.forEach(point => {
+        const jsonPoint = jsonData[point.id];
+        if (jsonPoint) {
+          point.name = decodeURIComponent(jsonPoint["Customer Name"]);
+          point.address = decodeURIComponent(jsonPoint["Adresse"]);
+          point.phone = decodeURIComponent(jsonPoint["Phone"]);
+        }
+      });
+
+      // Centrer la carte sur le premier point (si présent)
+      const map = L.map('map').setView([points[0]?.lat || 0, points[0]?.lon || 0], 13);
+
+      // Ajouter fond de carte OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Ajouter les marqueurs pour chaque point
+      points.forEach(point => {
+        const popupContent =
+          `<strong>Nom :</strong> ${point.name || 'Inconnu'}<br>` +
+          `<strong>Adresse :</strong> ${point.address || 'Inconnue'}<br>` +
+          `<strong>Téléphone :</strong> ${point.phone || 'Inconnu'}<br>` +
+          `<em>Coordonnées :</em> [${point.lat}, ${point.lon}]`;
+
+        L.marker([point.lat, point.lon])
+          .addTo(map)
+          .bindPopup(popupContent);
+      });
     }
 
-    // Ajouter fond de carte OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Ajouter les marqueurs
-    points.forEach((point, i) => {
-      const popupContent =
-        `<strong>Nom :</strong> ${point.name}<br>` +
-        `<strong>Adresse :</strong> ${point.address}<br>` +
-        `<strong>Téléphone :</strong> ${point.phone}<br>` +
-        `<em>Coordonnées :</em> [${point.lat}, ${point.lon}]`;
-
-      L.marker([point.lat, point.lon])
-        .addTo(map)
-        .bindPopup(popupContent);
-    });
+    // Appeler la fonction fetchData pour récupérer et afficher les données
+    fetchData();
   </script>
 </body>
 </html>
