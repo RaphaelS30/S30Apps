@@ -57,8 +57,8 @@
         }
       });
 
-      // Centrer la carte sur le premier point (si présent)
-      const map = L.map('map').setView([points[0]?.lat || 0, points[0]?.lon || 0], 13);
+      // Centrer la carte sur la Belgique (Bruxelles) avec un niveau de zoom approprié
+      const map = L.map('map').setView([50.8503, 4.3517], 7); // Lat, Lon de Bruxelles et un zoom 7
 
       // Ajouter fond de carte OpenStreetMap
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
