@@ -41,14 +41,17 @@
 
       // Parser les données JSON
       const jsonData = JSON.parse(decodedContent);
-
+      
       // Ajouter des informations aux points avec les données du JSON
       points.forEach(point => {
-        const jsonPoint = jsonData[point.id];
+        const jsonPoint = jsonData.body.find(p => p.ID === parseInt(point.id));
         if (jsonPoint) {
           point.name = decodeURIComponent(jsonPoint["Customer Name"]);
           point.address = decodeURIComponent(jsonPoint["Adresse"]);
           point.phone = decodeURIComponent(jsonPoint["Phone"]);
+          point.contactName = decodeURIComponent(jsonPoint["Contact Name"]);
+          point.dateRDV = decodeURIComponent(jsonPoint["Date du RDV"]);
+          point.pitID = jsonPoint["PitID"]; // Ajout du PitID
         } else {
           console.warn(`Aucune donnée trouvée pour le point avec ID: ${point.id}`);
         }
@@ -62,12 +65,16 @@
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
-      // Ajouter les marqueurs pour chaque point
+      // Ajouter les marqueurs pour chaque point avec toutes les informations
       points.forEach(point => {
         const popupContent =
-          `<strong>Nom :</strong> ${point.name || 'Inconnu'}<br>` +
+          `<strong>ID :</strong> ${point.id || 'Inconnu'}<br>` +
+          `<strong>Nom du client :</strong> ${point.name || 'Inconnu'}<br>` +
           `<strong>Adresse :</strong> ${point.address || 'Inconnue'}<br>` +
           `<strong>Téléphone :</strong> ${point.phone || 'Inconnu'}<br>` +
+          `<strong>Nom du contact :</strong> ${point.contactName || 'Inconnu'}<br>` +
+          `<strong>Date du RDV :</strong> ${point.dateRDV || 'Inconnue'}<br>` +
+          `<strong>PitID :</strong> ${point.pitID || 'Inconnu'}<br>` +
           `<em>Coordonnées :</em> [${point.lat}, ${point.lon}]`;
 
         L.marker([point.lat, point.lon])
