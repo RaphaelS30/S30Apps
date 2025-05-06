@@ -61,7 +61,8 @@
             `<em>Coordonnées :</em> [${point.Latitude}, ${point.Longitude}]`;
 
           if (point.Latitude && point.Longitude) {
-            L.marker([point.Latitude, point.Longitude])
+            L.marker([point.lat || point.Latitude, point.lon || point.Longitude])
+
               .addTo(map)
               .bindPopup(popupContent);
           } else {
