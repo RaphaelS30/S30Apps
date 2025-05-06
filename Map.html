@@ -20,61 +20,60 @@
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
-    // Récupérer l'ID depuis l'URL (par exemple ?points=123)
     const urlParams = new URLSearchParams(window.location.search);
-    const pointsParam = urlParams.get('points'); // Récupère l'ID du point passé dans l'URL
+    const pointsParam = urlParams.get('points');
 
-    // Vérifier si l'ID est fourni dans l'URL
-    if (!pointsParam) {
-      alert("Aucun ID de point spécifié dans l'URL.");
-      throw new Error("ID de point manquant");
-    }
+    // Convertir la chaîne "1301|2585|3832" en [1301, 2585, 3832]
+    const idList = pointsParam ? pointsParam.split('|').map(id => parseInt(id)) : [];
 
-    // Fonction pour récupérer les données du fichier JSON depuis GitHub
     async function fetchData() {
-      const response = await fetch('https://api.github.com/repos/raphaels30/S30Apps/contents/points_data.json');
-      const data = await response.json();
-      const decodedContent = atob(data.content); // Décoder le contenu base64
+      try {
+        const response = await fetch('https://api.github.com/repos/raphaels30/S30Apps/contents/points_data.json');
+        const data = await response.json();
+        const decodedContent = atob(data.content);
+        const jsonData = JSON.parse(decodedContent);
 
-      // Parser le contenu JSON
-      const jsonData = JSON.parse(decodedContent);
+        // Filtrer les points dont l'ID est dans la liste
+        const filteredPoints = jsonData.body.filter(p => idList.includes(p.ID));
 
-      // Filtrer les points pour ceux correspondant à l'ID passé dans l'URL
-      const filteredPoints = jsonData.body.filter(p => p.ID === parseInt(pointsParam)); // Filtrer par ID
+        if (filteredPoints.length === 0) {
+          alert("Aucun point trouvé pour les ID spécifiés.");
+          return;
+        }
 
-      if (filteredPoints.length === 0) {
-        alert("Aucun point trouvé pour cet ID.");
-        return;
+        // Centrer la carte sur Bruxelles
+        const map = L.map('map').setView([50.8503, 4.3517], 9);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Ajouter les marqueurs
+        filteredPoints.forEach(point => {
+          const popupContent =
+            `<strong>ID :</strong> ${point.ID || 'Inconnu'}<br>` +
+            `<strong>Nom du client :</strong> ${decodeURIComponent(point["Customer Name"] || '')}<br>` +
+            `<strong>Adresse :</strong> ${decodeURIComponent(point["Adresse"] || '')}<br>` +
+            `<strong>Téléphone :</strong> ${decodeURIComponent(point["Phone"] || '')}<br>` +
+            `<strong>Nom du contact :</strong> ${decodeURIComponent(point["Contact Name"] || '')}<br>` +
+            `<strong>Date du RDV :</strong> ${decodeURIComponent(point["Date du RDV"] || '')}<br>` +
+            `<strong>PitID :</strong> ${point["PitID"] || 'Inconnu'}<br>` +
+            `<em>Coordonnées :</em> [${point.Latitude}, ${point.Longitude}]`;
+
+          if (point.Latitude && point.Longitude) {
+            L.marker([point.Latitude, point.Longitude])
+              .addTo(map)
+              .bindPopup(popupContent);
+          } else {
+            console.warn(`Latitude ou longitude manquante pour l'ID ${point.ID}`);
+          }
+        });
+      } catch (error) {
+        console.error("Erreur lors du chargement des données :", error);
+        alert("Erreur de chargement des données.");
       }
-
-      // Créer et afficher la carte centrée sur la Belgique (Bruxelles) ou une autre localisation de votre choix
-      const map = L.map('map').setView([50.8503, 4.3517], 9); // Par défaut, centrée sur Bruxelles
-
-      // Ajouter la couche de fond OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-
-      // Ajouter les marqueurs pour chaque point filtré
-      filteredPoints.forEach(point => {
-        const popupContent =
-          `<strong>ID :</strong> ${point.ID || 'Inconnu'}<br>` +
-          `<strong>Nom du client :</strong> ${decodeURIComponent(point["Customer Name"]) || 'Inconnu'}<br>` +
-          `<strong>Adresse :</strong> ${decodeURIComponent(point["Adresse"]) || 'Inconnue'}<br>` +
-          `<strong>Téléphone :</strong> ${decodeURIComponent(point["Phone"]) || 'Inconnu'}<br>` +
-          `<strong>Nom du contact :</strong> ${decodeURIComponent(point["Contact Name"]) || 'Inconnu'}<br>` +
-          `<strong>Date du RDV :</strong> ${decodeURIComponent(point["Date du RDV"]) || 'Inconnue'}<br>` +
-          `<strong>PitID :</strong> ${point["PitID"] || 'Inconnu'}<br>` +
-          `<em>Coordonnées :</em> [${point.Latitude}, ${point.Longitude}]`;
-
-        // Ajouter le marqueur à la carte avec un popup
-        L.marker([point.Latitude, point.Longitude])
-          .addTo(map)
-          .bindPopup(popupContent);
-      });
     }
 
-    // Appeler la fonction pour récupérer et afficher les données des points
     fetchData();
   </script>
 </body>
