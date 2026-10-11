@@ -108,10 +108,17 @@
         document.getElementById('layout').innerHTML=`<div class="empty"><div class="empty-icon">🗺️</div><h2>Carte indisponible</h2><p>${esc(msg)}</p></div>`;
     }
 
+    // Date + heure (« 12/10/2026 à 08:30 »). Une date seule (« 2026-10-12 ») s'affiche sans heure.
     function fmtDate(v){
         if(!v)return'';
-        const d=new Date(v);
-        return isNaN(d)?v:d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
+        const s=String(v).trim();
+        const dateOnly=/^\d{4}-\d{2}-\d{2}$/.test(s);
+        const d=dateOnly?new Date(s+'T00:00:00'):new Date(s);
+        if(isNaN(d))return s;
+        const datePart=d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
+        if(dateOnly)return datePart;
+        const timePart=d.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'});
+        return `${datePart} à ${timePart}`;
     }
 
     const res=readPoints();
