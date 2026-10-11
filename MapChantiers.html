@@ -21,12 +21,17 @@
 
         header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);flex-wrap:wrap;}
         
-        /* Correction du CSS du logo pour une meilleure lisibilité */
+        /* --- MODIFICATION ICI : Fond blanc et ajustements pour le logo --- */
         .logo {
             height: 40px;
             width: auto;
             object-fit: contain;
+            background-color: #FFFFFF;
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+        /* ---------------------------------------------------------------- */
         
         .title{font-family:'Space Mono',monospace;font-weight:700;font-size:1.05rem;color:var(--accent);margin-right:auto;}
         .sub{font-size:.8rem;color:var(--text-secondary);}
@@ -55,11 +60,9 @@
         .empty h2{font-family:'Space Mono',monospace;color:var(--accent);font-size:1.1rem;margin-bottom:8px;}
         .empty p{color:var(--text-secondary);font-size:.9rem;}
 
-        /* Marqueurs */
         .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}
         .pin span{transform:rotate(45deg);font:700 .72rem 'Space Mono',monospace;color:var(--bg-primary);}
 
-        /* Popups */
         .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);}
         .leaflet-popup-content{margin:12px 14px;font-family:'IBM Plex Sans',sans-serif;min-width:220px;}
         .leaflet-container a.leaflet-popup-close-button{color:var(--text-secondary);}
@@ -80,10 +83,8 @@
 </head>
 <body>
     <header>
-        <!-- Le logo est maintenant correctement placé dans le header, au bon endroit -->
         <img src="https://i0.wp.com/solutions30.com/wp-content/uploads/2024/09/solutions-30-new-technologies-logo-320-1.png?w=320&ssl=1" alt="Logo Solutions 30" class="logo" onerror="this.style.display='none'">
         <div>
-            <!-- Correction de la faute de frappe : "Loaclisation" -> "Localisation" -->
             <div class="title">🚧 Localisation des récupérations de la signalisation Solutions30</div>
             <div class="sub" id="subtitle"></div>
         </div>
@@ -96,7 +97,6 @@
     </div>
 
 <script>
-    // ── Lecture des chantiers transmis par Power Apps (après le # de l'URL) ──
     function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
     function num(v){if(v===null||v===undefined||v==='')return NaN;return parseFloat(String(v).replace(',','.'));}
     function txt(v){if(v===null||v===undefined)return'';v=String(v).trim();return v==='None'?'':v;}
@@ -131,7 +131,6 @@
     if(res.error){
         showError(res.error);
     } else {
-        // 1. On mappe directement chaque ligne sans regroupement
         const items = res.data.map((p, index) => ({
             id: index + 1,
             lat: num(p.lat),
@@ -145,19 +144,16 @@
         const geo = items.filter(p => isFinite(p.lat) && isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180);
         const noGeo = items.filter(p => !geo.includes(p));
 
-        // En-tête
         document.getElementById('countPill').textContent = `${items.length} chantier${items.length > 1 ? 's' : ''}`;
         document.getElementById('countPill').style.display = 'inline-block';
         const techs = [...new Set(items.map(p => p.tech).filter(Boolean))];
         document.getElementById('subtitle').textContent = techs.length === 1 ? `Technicien : ${techs[0]}` : (techs.length > 1 ? `${techs.length} techniciens` : '');
 
-        // Carte
         const map = L.map('map').setView([50.6, 4.3], 9);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'}).addTo(map);
 
         const markers = [];
         
-        // 2. Création d'un marqueur indépendant pour CHAQUE ligne
         geo.forEach((p, i) => {
             const icon = L.divIcon({
                 className: '',
@@ -195,7 +191,6 @@
             b.addEventListener('click', fitAll);
         }
 
-        // 3. Affichage de la liste : 1 élément = 1 ligne, strictement dans l'ordre
         const list = document.getElementById('list');
         let html = '';
         
@@ -227,7 +222,6 @@
         if(!items.length) html = '<div class="empty"><p>Aucun chantier dans la sélection.</p></div>';
         list.innerHTML = html;
 
-        // 4. Interaction : clic sur la liste = zoom sur le marqueur correspondant
         list.querySelectorAll('.item[data-id]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = +btn.dataset.id;
