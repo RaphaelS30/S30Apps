@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chantiers à récupérer</title>
+    <img src="https://i0.wp.com/solutions30.com/wp-content/uploads/2024/09/solutions-30-new-technologies-logo-320-1.png?w=320&ssl=1" alt="Logo Société" class="logo" onerror="this.style.display='none'">
+    <title>Localisation des reprises de signalisation ACN</title>
     <meta name="theme-color" content="#0F172A">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -20,6 +21,7 @@
         body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg-primary);color:var(--text-primary);display:flex;flex-direction:column;}
 
         header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+        .logo {height: 40px; /* Ajustez la hauteur selon la taille souhaitée */width: auto;object-fit: contain;}
         .title{font-family:'Space Mono',monospace;font-weight:700;font-size:1.05rem;color:var(--accent);margin-right:auto;}
         .sub{font-size:.8rem;color:var(--text-secondary);}
         .pill{background:var(--accent);color:var(--bg-primary);font-family:'Space Mono',monospace;font-weight:700;font-size:.8rem;padding:4px 12px;border-radius:20px;}
@@ -73,7 +75,7 @@
 <body>
     <header>
         <div>
-            <div class="title">🚧 Chantiers à récupérer</div>
+            <div class="title">🚧 Loaclisation des récupération de la signalisation Solutions30</div>
             <div class="sub" id="subtitle"></div>
         </div>
         <span class="pill" id="countPill" style="display:none;"></span>
