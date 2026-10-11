@@ -41,7 +41,6 @@
         .item-body{flex:1;min-width:0;}
         .addr{font-weight:600;font-size:.88rem;line-height:1.3;}
         .meta{font-size:.75rem;color:var(--text-secondary);margin-top:4px;font-family:'Space Mono',monospace;}
-        .count-tag{display:inline-block;margin-top:5px;font-size:.7rem;color:var(--warning);font-weight:600;}
 
         .empty{margin:auto;max-width:420px;text-align:center;padding:40px 20px;}
         .empty-icon{font-size:2.6rem;margin-bottom:12px;}
@@ -51,13 +50,11 @@
         /* Marqueurs */
         .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}
         .pin span{transform:rotate(45deg);font:700 .72rem 'Space Mono',monospace;color:var(--bg-primary);}
-        .pin.multi{background:var(--warning);}
 
         /* Popups */
         .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);}
         .leaflet-popup-content{margin:12px 14px;font-family:'IBM Plex Sans',sans-serif;min-width:220px;}
         .leaflet-container a.leaflet-popup-close-button{color:var(--text-secondary);}
-        .pp-entry+.pp-entry{border-top:1px solid var(--border);margin-top:10px;padding-top:10px;}
         .pp-head{font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;}
         .pp-addr{font-weight:600;font-size:.9rem;margin-top:4px;}
         .pp-meta{font-size:.78rem;color:var(--text-secondary);margin-top:4px;line-height:1.5;}
@@ -89,7 +86,6 @@
 
 <script>
     // ── Lecture des chantiers transmis par Power Apps (après le # de l'URL) ──
-    // Format attendu : [{"lat":..,"lon":..,"adr":"..","pit":"..","tech":"..","date":".."}, ...]
     function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
     function num(v){if(v===null||v===undefined||v==='')return NaN;return parseFloat(String(v).replace(',','.'));}
     function txt(v){if(v===null||v===undefined)return'';v=String(v).trim();return v==='None'?'':v;}
@@ -108,7 +104,6 @@
         document.getElementById('layout').innerHTML=`<div class="empty"><div class="empty-icon">🗺️</div><h2>Carte indisponible</h2><p>${esc(msg)}</p></div>`;
     }
 
-    // Date + heure (« 12/10/2026 à 08:30 »). Une date seule (« 2026-10-12 ») s'affiche sans heure.
     function fmtDate(v){
         if(!v)return'';
         const s=String(v).trim();
@@ -122,100 +117,123 @@
     }
 
     const res=readPoints();
-    if(res.error){showError(res.error);}
-    else{
-        const items=res.data.map(p=>({
-            lat:num(p.lat),lon:num(p.lon),
-            adr:txt(p.adr),pit:txt(p.pit),tech:txt(p.tech),date:txt(p.date)
+    if(res.error){
+        showError(res.error);
+    } else {
+        // 1. On mappe directement chaque ligne sans regroupement
+        const items = res.data.map((p, index) => ({
+            id: index + 1,
+            lat: num(p.lat),
+            lon: num(p.lon),
+            adr: txt(p.adr),
+            pit: txt(p.pit),
+            tech: txt(p.tech),
+            date: txt(p.date)
         }));
-        const geo=items.filter(p=>isFinite(p.lat)&&isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180);
-        const noGeo=items.filter(p=>!geo.includes(p));
 
-        // Regrouper les chantiers situés exactement au même endroit
-        const groups=[];const byKey={};
-        geo.forEach(p=>{
-            const k=p.lat.toFixed(5)+','+p.lon.toFixed(5);
-            if(!byKey[k]){byKey[k]={lat:p.lat,lon:p.lon,entries:[]};groups.push(byKey[k]);}
-            byKey[k].entries.push(p);
-        });
+        const geo = items.filter(p => isFinite(p.lat) && isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180);
+        const noGeo = items.filter(p => !geo.includes(p));
 
         // En-tête
-        document.getElementById('countPill').textContent=`${items.length} chantier${items.length>1?'s':''}`;
-        document.getElementById('countPill').style.display='inline-block';
-        const techs=[...new Set(items.map(p=>p.tech).filter(Boolean))];
-        document.getElementById('subtitle').textContent=techs.length===1?`Technicien : ${techs[0]}`:(techs.length>1?`${techs.length} techniciens`:'');
+        document.getElementById('countPill').textContent = `${items.length} chantier${items.length > 1 ? 's' : ''}`;
+        document.getElementById('countPill').style.display = 'inline-block';
+        const techs = [...new Set(items.map(p => p.tech).filter(Boolean))];
+        document.getElementById('subtitle').textContent = techs.length === 1 ? `Technicien : ${techs[0]}` : (techs.length > 1 ? `${techs.length} techniciens` : '');
 
         // Carte
-        const map=L.map('map').setView([50.6,4.3],9);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+        const map = L.map('map').setView([50.6, 4.3], 9);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'}).addTo(map);
 
-        function popupHTML(g,n){
-            const entries=g.entries.map(p=>`<div class="pp-entry">
-                <div class="pp-head">Chantier n°${n}${p.pit?' · PIT '+esc(p.pit):''}</div>
-                <div class="pp-addr">${esc(p.adr||'Adresse non renseignée')}</div>
-                <div class="pp-meta">${p.tech?'👷 '+esc(p.tech)+'<br>':''}${p.date?'📅 '+esc(fmtDate(p.date)):''}</div>
-            </div>`).join('');
-            const dest=`${g.lat},${g.lon}`;
-            return `${entries}<div class="nav">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${dest}" target="_blank" rel="noopener">🧭 Google Maps</a>
-                <a class="alt" href="https://waze.com/ul?ll=${dest}&navigate=yes" target="_blank" rel="noopener">Waze</a>
-            </div>`;
-        }
+        const markers = [];
+        
+        // 2. Création d'un marqueur indépendant pour CHAQUE ligne
+        geo.forEach((p, i) => {
+            const icon = L.divIcon({
+                className: '',
+                html: `<div class="pin"><span>${p.id}</span></div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
+            });
 
-        const markers=[];
-        groups.forEach((g,i)=>{
-            const n=i+1,multi=g.entries.length>1;
-            const icon=L.divIcon({className:'',html:`<div class="pin${multi?' multi':''}"><span>${n}</span></div>`,iconSize:[30,30],iconAnchor:[15,30],popupAnchor:[0,-30]});
-            markers.push(L.marker([g.lat,g.lon],{icon}).addTo(map).bindPopup(popupHTML(g,n)));
+            const popupContent = `
+                <div class="pp-head">Chantier n°${p.id}${p.pit ? ' · PIT ' + esc(p.pit) : ''}</div>
+                <div class="pp-addr">${esc(p.adr || 'Adresse non renseignée')}</div>
+                <div class="pp-meta">
+                    ${p.tech ? '👷 ' + esc(p.tech) + '<br>' : ''}
+                    ${p.date ? '📅 ' + esc(fmtDate(p.date)) : ''}
+                </div>
+                <div class="nav">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}" target="_blank" rel="noopener">🧭 Google Maps</a>
+                    <a class="alt" href="https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes" target="_blank" rel="noopener">Waze</a>
+                </div>
+            `;
+
+            markers.push(L.marker([p.lat, p.lon], {icon}).addTo(map).bindPopup(popupContent));
         });
 
         function fitAll(){
-            if(!groups.length)return;
-            if(groups.length===1)map.setView([groups[0].lat,groups[0].lon],15);
-            else map.fitBounds(groups.map(g=>[g.lat,g.lon]),{padding:[40,40],maxZoom:15});
+            if(!geo.length) return;
+            if(geo.length === 1) map.setView([geo[0].lat, geo[0].lon], 15);
+            else map.fitBounds(geo.map(p => [p.lat, p.lon]), {padding: [40, 40], maxZoom: 15});
         }
         fitAll();
-        if(groups.length>1){const b=document.getElementById('fitBtn');b.style.display='inline-block';b.addEventListener('click',fitAll);}
+        if(geo.length > 1){
+            const b = document.getElementById('fitBtn');
+            b.style.display = 'inline-block';
+            b.addEventListener('click', fitAll);
+        }
 
-        // Liste
-        const list=document.getElementById('list');
-        let html='';
-        if(groups.length){
-            html+=`<div class="section">Sur la carte (${geo.length})</div>`;
-            html+=groups.map((g,i)=>{
-                const p=g.entries[0];
-                const metaParts=[p.pit?'PIT '+esc(p.pit):'',p.date?esc(fmtDate(p.date)):''].filter(Boolean).join(' · ');
-                return `<button class="item" data-i="${i}">
-                    <div class="num">${i+1}</div>
+        // 3. Affichage de la liste : 1 élément = 1 ligne, strictement dans l'ordre
+        const list = document.getElementById('list');
+        let html = '';
+        
+        if(geo.length){
+            html += `<div class="section">Sur la carte (${geo.length})</div>`;
+            html += geo.map(p => {
+                const metaParts = [p.pit ? 'PIT ' + esc(p.pit) : '', p.date ? esc(fmtDate(p.date)) : ''].filter(Boolean).join(' · ');
+                return `<button class="item" data-id="${p.id}">
+                    <div class="num">${p.id}</div>
                     <div class="item-body">
-                        <div class="addr">${esc(p.adr||'Adresse non renseignée')}</div>
-                        ${metaParts?`<div class="meta">${metaParts}</div>`:''}
-                        ${g.entries.length>1?`<div class="count-tag">${g.entries.length} chantiers à cette adresse</div>`:''}
+                        <div class="addr">${esc(p.adr || 'Adresse non renseignée')}</div>
+                        ${metaParts ? `<div class="meta">${metaParts}</div>` : ''}
                     </div>
                 </button>`;
             }).join('');
         }
+        
         if(noGeo.length){
-            html+=`<div class="section" style="margin-top:16px;">Sans coordonnées (${noGeo.length})</div>`;
-            html+=noGeo.map(p=>`<div class="item nogeo">
+            html += `<div class="section" style="margin-top:16px;">Sans coordonnées (${noGeo.length})</div>`;
+            html += noGeo.map(p => `<div class="item nogeo">
                 <div class="num">!</div>
                 <div class="item-body">
-                    <div class="addr">${esc(p.adr||'Adresse non renseignée')}</div>
-                    <div class="meta">${[p.pit?'PIT '+esc(p.pit):'','Position introuvable'].filter(Boolean).join(' · ')}</div>
+                    <div class="addr">${esc(p.adr || 'Adresse non renseignée')}</div>
+                    <div class="meta">${[p.pit ? 'PIT ' + esc(p.pit) : '', 'Position introuvable'].filter(Boolean).join(' · ')}</div>
                 </div>
             </div>`).join('');
         }
-        if(!items.length)html='<div class="empty"><p>Aucun chantier dans la sélection.</p></div>';
-        list.innerHTML=html;
+        
+        if(!items.length) html = '<div class="empty"><p>Aucun chantier dans la sélection.</p></div>';
+        list.innerHTML = html;
 
-        list.querySelectorAll('.item[data-i]').forEach(btn=>btn.addEventListener('click',()=>{
-            const i=+btn.dataset.i,g=groups[i];
-            list.querySelectorAll('.item').forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');
-            map.setView([g.lat,g.lon],16);
-            markers[i].openPopup();
-            if(window.innerWidth<=760)document.getElementById('map').scrollIntoView({behavior:'smooth'});
-        }));
+        // 4. Interaction : clic sur la liste = zoom sur le marqueur correspondant
+        list.querySelectorAll('.item[data-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = +btn.dataset.id;
+                const p = geo.find(x => x.id === id);
+                const markerIndex = geo.indexOf(p);
+                
+                list.querySelectorAll('.item').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                map.setView([p.lat, p.lon], 16);
+                markers[markerIndex].openPopup();
+                
+                if(window.innerWidth <= 760) {
+                    document.getElementById('map').scrollIntoView({behavior: 'smooth'});
+                }
+            });
+        });
     }
 </script>
 </body>
